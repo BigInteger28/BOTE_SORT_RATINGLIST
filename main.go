@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	// Stap 1: Open en lees het invoerbestand
+	// Open en lees het invoerbestand
 	file, err := os.Open("input.txt")
 	if err != nil {
 		panic(err)
@@ -25,52 +25,56 @@ func main() {
 		panic(err)
 	}
 
-	// Stap 2: Sorteer de regels met sort.SliceStable en aangepaste vergelijking
+	// Sorteer de regels
 	sort.SliceStable(lines, func(i, j int) bool {
-		fieldsI := strings.Fields(lines[i])
-		fieldsJ := strings.Fields(lines[j])
+		fieldsI := strings.Split(lines[i], "   ")
+		fieldsJ := strings.Split(lines[j], "   ")
 
-		// Extract rating (laatste veld)
-		ratingI, _ := strconv.Atoi(fieldsI[len(fieldsI)-1])
-		ratingJ, _ := strconv.Atoi(fieldsJ[len(fieldsJ)-1])
+		// Extract name (eerste veld)
+		nameI := fieldsI[0]
+		nameJ := fieldsJ[0]
 
-		// Extract level (voorlaatste veld)
-		levelI, _ := strconv.Atoi(fieldsI[len(fieldsI)-2])
-		levelJ, _ := strconv.Atoi(fieldsJ[len(fieldsJ)-2])
+		// Extract level (tweede veld)
+		levelI, _ := strconv.Atoi(fieldsI[1])
+		levelJ, _ := strconv.Atoi(fieldsJ[1])
 
-		// Primaire sleutel: rating aflopend
+		// Extract rating (derde veld)
+		ratingI, _ := strconv.Atoi(fieldsI[2])
+		ratingJ, _ := strconv.Atoi(fieldsJ[2])
+
+		// Sorteer op rating (aflopend)
 		if ratingI != ratingJ {
 			return ratingI > ratingJ
 		}
 
-		// Secundaire sleutel: level aflopend
+		// Bij gelijke rating, sorteer op level (aflopend)
 		if levelI != levelJ {
 			return levelI > levelJ
 		}
 
-		// Tertiaire sleutel: non-"---" vóór "---"
-		isDashI := fieldsI[0] == "---"
-		isDashJ := fieldsJ[0] == "---"
-		if !isDashI && isDashJ {
-			return true // i vóór j
+		// Bij gelijke rating en level, non-"---" vóór "---"
+		isDashI := strings.HasPrefix(nameI, "---")
+		isDashJ := strings.HasPrefix(nameJ, "---")
+		if isDashI != isDashJ {
+			return !isDashI // non-"---" komt vóór "---"
 		}
-		if isDashI && !isDashJ {
-			return false // j vóór i
-		}
-		return false // Behoud originele volgorde voor gelijke elementen
+
+		return false // Behoud originele volgorde
 	})
 
-	// Stap 3: Schrijf de gesorteerde regels naar het uitvoerbestand
+	// Schrijf naar uitvoerbestand
 	outFile, err := os.Create("output.txt")
 	if err != nil {
 		panic(err)
 	}
 	defer outFile.Close()
 
+	writer := bufio.NewWriter(outFile)
 	for _, line := range lines {
-		_, err := outFile.WriteString(line + "\n")
+		_, err := writer.WriteString(line + "\n")
 		if err != nil {
 			panic(err)
 		}
 	}
+	writer.Flush()
 }
